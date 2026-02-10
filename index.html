@@ -1,0 +1,958 @@
+<!doctype html>
+<html lang="pt-br" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portal - Cadastro e Consulta</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: "class" };</script>
+
+  <style>
+    .gridlines {
+      background-image: radial-gradient(circle at 1px 1px, rgba(15,23,42,.07) 1px, transparent 0);
+      background-size: 22px 22px;
+    }
+    .dark .gridlines {
+      background-image: radial-gradient(circle at 1px 1px, rgba(148,163,184,.10) 1px, transparent 0);
+    }
+  </style>
+</head>
+
+<body class="h-full bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+  <!-- Toast -->
+  <div id="toastWrap" class="pointer-events-none fixed top-4 right-4 z-[999] space-y-2"></div>
+
+  <div class="min-h-full">
+    <div class="flex min-h-screen">
+      <!-- Sidebar -->
+      <aside class="hidden md:flex w-72 flex-col border-r border-slate-200/70 dark:border-slate-800 bg-white/80 dark:bg-slate-900/70 backdrop-blur">
+        <div class="px-5 py-5 flex items-center gap-3">
+          <!-- LOGO (corrigido) -->
+          <div class="h-10 w-10 rounded-xl bg-blue-600 shadow-sm flex items-center justify-center overflow-hidden">
+            <img data-logo alt="Logo" class="h-7 w-7 object-contain select-none" />
+          </div>
+
+          <div class="leading-tight">
+            <div class="text-sm font-semibold">Portal Interno</div>
+            <div class="text-xs text-slate-500 dark:text-slate-300">Cadastro & Consulta</div>
+          </div>
+        </div>
+
+        <nav class="px-3 pb-4">
+          <p class="px-3 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            Módulos
+          </p>
+
+          <button data-nav="cadastrar"
+            class="navBtn w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-900 dark:text-slate-100 bg-blue-50 dark:bg-blue-500/10 border border-blue-100/70 dark:border-blue-400/15">
+            <span class="h-2 w-2 rounded-full bg-blue-600"></span>
+            Cadastrar
+          </button>
+
+          <button data-nav="consultar"
+            class="navBtn mt-2 w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 border border-transparent">
+            <span class="h-2 w-2 rounded-full bg-slate-400"></span>
+            Consultar
+          </button>
+
+          <button data-nav="importar"
+            class="navBtn mt-2 w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 border border-transparent">
+            <span class="h-2 w-2 rounded-full bg-slate-400"></span>
+            Importar CSV
+          </button>
+        </nav>
+
+        <div class="mt-auto px-5 py-4 border-t border-slate-200/70 dark:border-slate-800">
+          <div class="text-xs text-slate-500 dark:text-slate-400">Usuário (auditoria)</div>
+          <input id="userInput" placeholder="Ex: Admin (Admin)"
+            class="mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+          <div class="mt-3 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+            <span>Ambiente</span>
+            <span class="inline-flex items-center gap-2">
+              <span class="h-2 w-2 rounded-full bg-emerald-500"></span> operacional
+            </span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Content -->
+      <div class="flex-1">
+        <!-- Topbar -->
+        <header class="sticky top-0 z-40 border-b border-slate-200/70 dark:border-slate-800 bg-white/80 dark:bg-slate-900/70 backdrop-blur">
+          <div class="mx-auto max-w-7xl px-4">
+            <div class="flex h-16 items-center justify-between gap-3">
+              <div class="flex items-center gap-3 min-w-0">
+                <button id="mobileMenuBtn"
+                  class="md:hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm font-semibold">
+                  Menu
+                </button>
+
+                <div class="min-w-0">
+                  <div class="text-xs text-slate-500 dark:text-slate-300">
+                    Início / <span id="crumb">Cadastrar</span>
+                  </div>
+                  <div class="truncate text-base font-semibold tracking-tight" id="pageTitle">Cadastrar novo registro</div>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <button id="themeBtn"
+                  class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800">
+                  <span id="themeLabel">Tema</span>
+                </button>
+
+                <label class="rounded-xl bg-blue-600 text-white px-3 py-2 text-sm font-semibold shadow-sm hover:opacity-95 cursor-pointer">
+                  Importar CSV
+                  <input id="csvInputTop" type="file" accept=".csv,text/csv" class="hidden" />
+                </label>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <!-- Mobile Drawer -->
+        <div id="drawer" class="md:hidden hidden fixed inset-0 z-50">
+          <div class="absolute inset-0 bg-black/40" id="drawerBackdrop"></div>
+          <div class="absolute left-0 top-0 h-full w-80 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
+            <div class="px-5 py-5 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <!-- LOGO (corrigido) -->
+                <div class="h-10 w-10 rounded-xl bg-blue-600 shadow-sm flex items-center justify-center overflow-hidden">
+                  <img data-logo alt="Logo" class="h-7 w-7 object-contain select-none" />
+                </div>
+
+                <div class="leading-tight">
+                  <div class="text-sm font-semibold">Portal Interno</div>
+                  <div class="text-xs text-slate-500 dark:text-slate-300">Cadastro & Consulta</div>
+                </div>
+              </div>
+              <button id="closeDrawer" class="rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-sm font-semibold">
+                Fechar
+              </button>
+            </div>
+
+            <div class="px-3">
+              <button data-nav="cadastrar" class="navBtnMobile w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold bg-blue-50 dark:bg-blue-500/10 border border-blue-100/70 dark:border-blue-400/15">
+                <span class="h-2 w-2 rounded-full bg-blue-600"></span> Cadastrar
+              </button>
+              <button data-nav="consultar" class="navBtnMobile mt-2 w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800/60 border border-transparent">
+                <span class="h-2 w-2 rounded-full bg-slate-400"></span> Consultar
+              </button>
+              <button data-nav="importar" class="navBtnMobile mt-2 w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800/60 border border-transparent">
+                <span class="h-2 w-2 rounded-full bg-slate-400"></span> Importar CSV
+              </button>
+
+              <div class="mt-4 px-2">
+                <div class="text-xs text-slate-500 dark:text-slate-400">Usuário (auditoria)</div>
+                <input id="userInputMobile" placeholder="Ex: Admin (Admin)"
+                  class="mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm outline-none" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pages -->
+        <main class="mx-auto max-w-7xl px-4 py-6 space-y-5">
+          <!-- Auditoria -->
+          <section class="gridlines rounded-2xl border border-slate-200/70 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+            <div class="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <div class="text-sm font-semibold">Auditoria</div>
+                <div class="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                  Última importação: <span id="auditImport" class="font-semibold">—</span> · Usuário: <span id="auditUser" class="font-semibold">—</span>
+                </div>
+              </div>
+              <div class="text-xs text-slate-500 dark:text-slate-400">
+                Dados persistem neste navegador (LocalStorage).
+              </div>
+            </div>
+          </section>
+
+          <!-- PAGE: CADASTRAR -->
+          <section id="pageCadastrar" class="rounded-2xl border border-slate-200/70 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+            <div class="p-5 sm:p-6">
+              <h2 class="text-lg font-semibold">Cadastrar novo registro</h2>
+              <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                Preencha os campos e clique em <span class="font-semibold">Adicionar</span>.
+              </p>
+
+              <form id="formCadastrar" class="mt-5 space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300">CPF</label>
+                    <input id="cd_cpf" placeholder="Somente números"
+                      class="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300">Matrícula</label>
+                    <input id="cd_matricula" placeholder="Ex: 2275"
+                      class="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300">Nome</label>
+                    <input id="nm_pessoa" placeholder="Nome completo"
+                      class="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300">Regional</label>
+                    <input id="nm_regional" placeholder="Ex: SERPRO - SEDE - DF"
+                      class="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300">Data Admissão</label>
+                    <input id="dt_admissao" type="date"
+                      class="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+                  </div>
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300">Data Desligamento</label>
+                    <input id="dt_desligamento" type="date"
+                      class="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+                  </div>
+                </div>
+
+                <div class="pt-2 flex flex-col sm:flex-row gap-3">
+                  <button type="submit"
+                    class="rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-4 py-2.5 text-sm font-semibold shadow-sm hover:opacity-95">
+                    Adicionar
+                  </button>
+                  <button type="button" id="btnLimpar"
+                    class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-2.5 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800">
+                    Limpar campos
+                  </button>
+                  <button type="button" id="btnIrConsultar"
+                    class="rounded-xl bg-blue-600 text-white px-4 py-2.5 text-sm font-semibold shadow-sm hover:opacity-95">
+                    Consultar
+                  </button>
+                </div>
+
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                  Observação: CPF será mascarado na tabela por padrão.
+                </p>
+              </form>
+            </div>
+          </section>
+
+          <!-- PAGE: CONSULTAR -->
+          <section id="pageConsultar" class="hidden space-y-5">
+            <!-- filtros -->
+            <section class="rounded-2xl border border-slate-200/70 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+              <div class="p-4 sm:p-5">
+                <div class="flex flex-col gap-3">
+                  <div class="flex flex-col lg:flex-row lg:items-end gap-3">
+                    <div class="flex-1">
+                      <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300">Pesquisar</label>
+                      <div class="mt-1 flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2">
+                        <span class="text-slate-400">⌕</span>
+                        <input id="searchInput" type="text" placeholder="CPF, matrícula, nome ou regional..."
+                          class="w-full bg-transparent text-sm outline-none placeholder:text-slate-400" />
+                      </div>
+                    </div>
+
+                    <div class="w-full lg:w-72">
+                      <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300">Regional</label>
+                      <select id="regionalSelect"
+                        class="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20">
+                        <option value="">Todas</option>
+                      </select>
+                    </div>
+
+                    <div class="w-full sm:w-auto">
+                      <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300">Admissão (de)</label>
+                      <input id="admissionFrom" type="date"
+                        class="mt-1 w-full sm:w-44 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+                    </div>
+
+                    <div class="w-full sm:w-auto">
+                      <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300">Admissão (até)</label>
+                      <input id="admissionTo" type="date"
+                        class="mt-1 w-full sm:w-44 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+                    </div>
+
+                    <button id="clearBtn"
+                      class="h-10 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800">
+                      Limpar
+                    </button>
+                  </div>
+
+                  <div class="flex items-center justify-between gap-3 pt-1">
+                    <div class="text-sm text-slate-600 dark:text-slate-300">
+                      <span class="font-semibold text-slate-900 dark:text-slate-100" id="countLabel">0</span> resultados
+                    </div>
+                    <div class="text-xs text-slate-500 dark:text-slate-400">Clique no cabeçalho para ordenar.</div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- tabela -->
+            <section class="rounded-2xl border border-slate-200/70 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
+              <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                  <thead class="sticky top-0 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+                    <tr class="text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      <th class="px-4 py-3 font-semibold cursor-pointer select-none" data-sort="cd_cpf">
+                        CPF <span class="sortIcon" data-sorticon="cd_cpf"></span>
+                      </th>
+                      <th class="px-4 py-3 font-semibold cursor-pointer select-none" data-sort="cd_matricula">
+                        Matrícula <span class="sortIcon" data-sorticon="cd_matricula"></span>
+                      </th>
+                      <th class="px-4 py-3 font-semibold cursor-pointer select-none" data-sort="nm_pessoa">
+                        Nome <span class="sortIcon" data-sorticon="nm_pessoa"></span>
+                      </th>
+                      <th class="px-4 py-3 font-semibold cursor-pointer select-none" data-sort="nm_regional">
+                        Regional <span class="sortIcon" data-sorticon="nm_regional"></span>
+                      </th>
+                      <th class="px-4 py-3 font-semibold cursor-pointer select-none" data-sort="dt_admissao">
+                        Admissão <span class="sortIcon" data-sorticon="dt_admissao"></span>
+                      </th>
+                      <th class="px-4 py-3 font-semibold cursor-pointer select-none" data-sort="dt_desligamento">
+                        Desligamento <span class="sortIcon" data-sorticon="dt_desligamento"></span>
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <!-- Skeleton (JS preenche) -->
+                  <tbody id="skeletonBody" class="hidden"></tbody>
+
+                  <!-- Linhas reais -->
+                  <tbody id="tableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
+                </table>
+              </div>
+
+              <div id="emptyState" class="hidden p-6">
+                <div class="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-6 text-center">
+                  <p class="text-base font-semibold">Nenhum registro encontrado</p>
+                  <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">Cadastre ou importe um CSV.</p>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between gap-3 border-t border-slate-200 dark:border-slate-800 px-4 py-3">
+                <button id="prevBtn"
+                  class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50">
+                  Anterior
+                </button>
+
+                <div class="text-sm text-slate-600 dark:text-slate-300">
+                  Página <span id="pageNow" class="font-semibold text-slate-900 dark:text-slate-100">1</span>
+                  de <span id="pageTotal" class="font-semibold text-slate-900 dark:text-slate-100">1</span>
+                </div>
+
+                <button id="nextBtn"
+                  class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50">
+                  Próximo
+                </button>
+              </div>
+            </section>
+          </section>
+
+          <!-- PAGE: IMPORTAR -->
+          <section id="pageImportar" class="hidden rounded-2xl border border-slate-200/70 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+            <div class="p-5 sm:p-6">
+              <h2 class="text-lg font-semibold">Importar CSV</h2>
+              <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                Use o botão <span class="font-semibold">Importar CSV</span> no topo. Cabeçalhos obrigatórios:
+              </p>
+              <div class="mt-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-3 font-mono text-xs">
+                cd_cpf, cd_matricula, nm_pessoa, nm_regional, dt_admissao, dt_desligamento
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =========================
+    // LOGO EMBUTIDO (Base64)
+    // =========================
+    const LOGO_DATA_URI = "content.png";
+    // aplica em todos os <img data-logo>
+    document.querySelectorAll("[data-logo]").forEach(img => { img.src = LOGO_DATA_URI; });
+
+    // =========================
+    // Persistência (LocalStorage)
+    // =========================
+    const LS_KEYS = {
+      data: "portal_empregados_data",
+      user: "portal_empregados_user",
+      audit: "portal_empregados_audit",
+      theme: "portal_empregados_theme",
+    };
+
+    function nowBR() {
+      const d = new Date();
+      const pad = (n)=>String(n).padStart(2,"0");
+      return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    // =========================
+    // Toast
+    // =========================
+    const toastWrap = document.getElementById("toastWrap");
+    function toast(message, type="info") {
+      const colors = {
+        info: "border-slate-200 dark:border-slate-800",
+        success: "border-emerald-200 dark:border-emerald-800/40",
+        error: "border-rose-200 dark:border-rose-800/40",
+        warn: "border-amber-200 dark:border-amber-800/40"
+      };
+
+      const el = document.createElement("div");
+      el.className = `pointer-events-auto w-[340px] max-w-[90vw] rounded-2xl border ${colors[type]} bg-white dark:bg-slate-900 shadow-lg`;
+      el.innerHTML = `
+        <div class="p-4 flex gap-3">
+          <div class="mt-0.5 h-2 w-2 rounded-full ${
+            type==="success" ? "bg-emerald-500" :
+            type==="error" ? "bg-rose-500" :
+            type==="warn" ? "bg-amber-500" : "bg-blue-500"
+          }"></div>
+          <div class="flex-1">
+            <div class="text-sm font-semibold">${message}</div>
+            <div class="mt-1 text-xs text-slate-500 dark:text-slate-300">${nowBR()}</div>
+          </div>
+          <button class="rounded-xl px-2 text-sm font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white">✕</button>
+        </div>
+      `;
+      el.querySelector("button").onclick = () => el.remove();
+      toastWrap.appendChild(el);
+      setTimeout(()=>{ if(el.isConnected) el.remove(); }, 4200);
+    }
+
+    // =========================
+    // Tema
+    // =========================
+    const htmlEl = document.documentElement;
+    const themeBtn = document.getElementById("themeBtn");
+    const themeLabel = document.getElementById("themeLabel");
+
+    function applyTheme(theme) {
+      if (theme === "dark") htmlEl.classList.add("dark");
+      else htmlEl.classList.remove("dark");
+      localStorage.setItem(LS_KEYS.theme, theme);
+      themeLabel.textContent = theme === "dark" ? "Dark" : "Light";
+    }
+    function initTheme() {
+      const saved = localStorage.getItem(LS_KEYS.theme);
+      if (saved === "dark" || saved === "light") return applyTheme(saved);
+      const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      applyTheme(prefersDark ? "dark" : "light");
+    }
+    themeBtn.addEventListener("click", () => {
+      const isDark = htmlEl.classList.contains("dark");
+      applyTheme(isDark ? "light" : "dark");
+    });
+
+    // =========================
+    // Navegação
+    // =========================
+    const crumb = document.getElementById("crumb");
+    const pageTitle = document.getElementById("pageTitle");
+
+    const pageCadastrar = document.getElementById("pageCadastrar");
+    const pageConsultar = document.getElementById("pageConsultar");
+    const pageImportar  = document.getElementById("pageImportar");
+
+    const navBtns = Array.from(document.querySelectorAll(".navBtn"));
+    const navBtnsMobile = Array.from(document.querySelectorAll(".navBtnMobile"));
+
+    function setActiveNav(key) {
+      const map = {
+        cadastrar: { page: pageCadastrar, title: "Cadastrar novo registro", crumb: "Cadastrar" },
+        consultar: { page: pageConsultar, title: "Consultar registros", crumb: "Consultar" },
+        importar:  { page: pageImportar,  title: "Importar CSV", crumb: "Importar" },
+      };
+
+      pageCadastrar.classList.add("hidden");
+      pageConsultar.classList.add("hidden");
+      pageImportar.classList.add("hidden");
+
+      map[key].page.classList.remove("hidden");
+      pageTitle.textContent = map[key].title;
+      crumb.textContent = map[key].crumb;
+
+      navBtns.forEach(b => {
+        const active = b.getAttribute("data-nav") === key;
+        b.className = active
+          ? "navBtn w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-900 dark:text-slate-100 bg-blue-50 dark:bg-blue-500/10 border border-blue-100/70 dark:border-blue-400/15"
+          : "navBtn mt-2 w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 border border-transparent";
+        b.querySelector("span").className = active ? "h-2 w-2 rounded-full bg-blue-600" : "h-2 w-2 rounded-full bg-slate-400";
+      });
+
+      navBtnsMobile.forEach(b => {
+        const active = b.getAttribute("data-nav") === key;
+        b.className = active
+          ? "navBtnMobile w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold bg-blue-50 dark:bg-blue-500/10 border border-blue-100/70 dark:border-blue-400/15"
+          : "navBtnMobile mt-2 w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800/60 border border-transparent";
+        b.querySelector("span").className = active ? "h-2 w-2 rounded-full bg-blue-600" : "h-2 w-2 rounded-full bg-slate-400";
+      });
+    }
+
+    navBtns.forEach(b => b.addEventListener("click", () => {
+      setActiveNav(b.dataset.nav);
+      if (b.dataset.nav === "consultar") renderConsulta();
+    }));
+    navBtnsMobile.forEach(b => b.addEventListener("click", () => {
+      setActiveNav(b.dataset.nav);
+      if (b.dataset.nav === "consultar") renderConsulta();
+      closeDrawer();
+    }));
+
+    // Drawer
+    const drawer = document.getElementById("drawer");
+    const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+    const drawerBackdrop = document.getElementById("drawerBackdrop");
+    const closeDrawerBtn = document.getElementById("closeDrawer");
+
+    function openDrawer(){ drawer.classList.remove("hidden"); }
+    function closeDrawer(){ drawer.classList.add("hidden"); }
+    mobileMenuBtn?.addEventListener("click", openDrawer);
+    drawerBackdrop?.addEventListener("click", closeDrawer);
+    closeDrawerBtn?.addEventListener("click", closeDrawer);
+
+    // =========================
+    // Auditoria + Usuário
+    // =========================
+    const userInput = document.getElementById("userInput");
+    const userInputMobile = document.getElementById("userInputMobile");
+    const auditImport = document.getElementById("auditImport");
+    const auditUser = document.getElementById("auditUser");
+
+    function getUser() {
+      return (localStorage.getItem(LS_KEYS.user) || "").trim() || "—";
+    }
+    function setUser(v) {
+      localStorage.setItem(LS_KEYS.user, (v || "").trim());
+      auditUser.textContent = getUser();
+    }
+    function getAudit() {
+      const raw = localStorage.getItem(LS_KEYS.audit);
+      return raw ? JSON.parse(raw) : { lastImport: null };
+    }
+    function setAudit(audit) {
+      localStorage.setItem(LS_KEYS.audit, JSON.stringify(audit));
+      const a = getAudit();
+      auditImport.textContent = a.lastImport || "—";
+      auditUser.textContent = getUser();
+    }
+
+    userInput?.addEventListener("input", (e)=> setUser(e.target.value));
+    userInputMobile?.addEventListener("input", (e)=> {
+      setUser(e.target.value);
+      userInput.value = e.target.value;
+    });
+
+    // =========================
+    // Dados + Tabela
+    // =========================
+    let empregados = [];
+    const state = {
+      query: "", regional: "", from: "", to: "",
+      page: 1, perPage: 10,
+      cpfVisible: new Set(),
+      sortKey: "nm_pessoa",
+      sortDir: "asc"
+    };
+
+    // elements consulta
+    const searchInput = document.getElementById("searchInput");
+    const regionalSelect = document.getElementById("regionalSelect");
+    const admissionFrom = document.getElementById("admissionFrom");
+    const admissionTo = document.getElementById("admissionTo");
+    const clearBtn = document.getElementById("clearBtn");
+
+    const tableBody = document.getElementById("tableBody");
+    const skeletonBody = document.getElementById("skeletonBody");
+    const emptyState = document.getElementById("emptyState");
+    const countLabel = document.getElementById("countLabel");
+
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const pageNow = document.getElementById("pageNow");
+    const pageTotal = document.getElementById("pageTotal");
+
+    // skeleton gerado via JS (sem ${} no HTML)
+    function buildSkeletonRows(rowCount = 8, colCount = 6) {
+      const rows = [];
+      for (let r = 0; r < rowCount; r++) {
+        let cols = "";
+        for (let c = 0; c < colCount; c++) {
+          cols += `
+            <td class="px-4 py-3">
+              <div class="h-4 w-full max-w-[240px] rounded bg-slate-200 dark:bg-slate-800"></div>
+            </td>
+          `;
+        }
+        rows.push(`<tr class="animate-pulse">${cols}</tr>`);
+      }
+      skeletonBody.innerHTML = rows.join("");
+    }
+    buildSkeletonRows(8, 6);
+
+    function pad2(n){ return String(n).padStart(2,"0"); }
+    function normalize(v){ return (v ?? "").toString().toLowerCase().trim(); }
+
+    function formatDateBR(iso){
+      if(!iso) return "—";
+      const d = new Date(iso + "T00:00:00");
+      if(Number.isNaN(d.getTime())) return "—";
+      return `${pad2(d.getDate())}/${pad2(d.getMonth()+1)}/${d.getFullYear()}`;
+    }
+
+    function maskCpf(raw){
+      const digits = (raw ?? "").toString().replace(/\D/g,"");
+      if(digits.length < 2) return "***.***.***-**";
+      return `***.***.***-${digits.slice(-2)}`;
+    }
+    function cpfDisplay(raw){
+      const key = (raw ?? "").toString();
+      return state.cpfVisible.has(key) ? key : maskCpf(key);
+    }
+
+    function withinRange(dateIso, fromIso, toIso){
+      if(!fromIso && !toIso) return true;
+      if(!dateIso) return false;
+      const t = new Date(dateIso+"T00:00:00").getTime();
+      if(Number.isNaN(t)) return false;
+      if(fromIso){
+        const f = new Date(fromIso+"T00:00:00").getTime();
+        if(t < f) return false;
+      }
+      if(toIso){
+        const u = new Date(toIso+"T23:59:59").getTime();
+        if(t > u) return false;
+      }
+      return true;
+    }
+
+    function saveData(){
+      localStorage.setItem(LS_KEYS.data, JSON.stringify(empregados));
+    }
+    function loadData(){
+      const raw = localStorage.getItem(LS_KEYS.data);
+      empregados = raw ? JSON.parse(raw) : [];
+    }
+
+    function renderRegionalOptions(){
+      const set = new Set(empregados.map(e=>e.nm_regional).filter(Boolean));
+      const regionals = Array.from(set).sort((a,b)=>a.localeCompare(b,"pt-BR"));
+      regionalSelect.querySelectorAll("option:not([value=''])").forEach(o=>o.remove());
+      for(const r of regionals){
+        const opt = document.createElement("option");
+        opt.value = r; opt.textContent = r;
+        regionalSelect.appendChild(opt);
+      }
+    }
+
+    function getFiltered(){
+      const q = normalize(state.query);
+      let arr = empregados.filter(e=>{
+        if(state.regional && e.nm_regional !== state.regional) return false;
+        if(!withinRange(e.dt_admissao, state.from, state.to)) return false;
+        if(!q) return true;
+
+        const hay = [
+          e.cd_cpf, e.cd_matricula, e.nm_pessoa, e.nm_regional,
+          formatDateBR(e.dt_admissao), formatDateBR(e.dt_desligamento),
+        ].map(normalize).join(" | ");
+        return hay.includes(q);
+      });
+
+      const key = state.sortKey;
+      const dir = state.sortDir;
+      arr.sort((a,b)=>{
+        const av = (a[key] ?? "").toString();
+        const bv = (b[key] ?? "").toString();
+        const cmp = av.localeCompare(bv, "pt-BR", { numeric: true, sensitivity: "base" });
+        return dir === "asc" ? cmp : -cmp;
+      });
+
+      return arr;
+    }
+
+    function getPagination(filtered){
+      const total = filtered.length;
+      const pages = Math.max(1, Math.ceil(total / state.perPage));
+      const page = Math.min(Math.max(1, state.page), pages);
+      const start = (page-1) * state.perPage;
+      return { page, pages, slice: filtered.slice(start, start + state.perPage), total };
+    }
+
+    function setSortIcons(){
+      document.querySelectorAll("[data-sorticon]").forEach(el=>{
+        const k = el.getAttribute("data-sorticon");
+        if(k !== state.sortKey){ el.textContent = ""; return; }
+        el.textContent = state.sortDir === "asc" ? " ▲" : " ▼";
+      });
+    }
+
+    function renderTable(rows){
+      tableBody.innerHTML = "";
+      for(const e of rows){
+        const cpfKey = (e.cd_cpf ?? "").toString();
+        const cpfBtnLabel = state.cpfVisible.has(cpfKey) ? "Ocultar" : "Mostrar";
+
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-slate-50 dark:hover:bg-slate-800/40";
+        tr.innerHTML = `
+          <td class="px-4 py-3 align-top">
+            <div class="flex items-center gap-2">
+              <span class="font-mono">${cpfDisplay(e.cd_cpf)}</span>
+              <button data-cpf="${cpfKey}" class="cpf-toggle text-xs font-semibold text-blue-700 dark:text-blue-300 hover:opacity-80">
+                ${cpfBtnLabel}
+              </button>
+            </div>
+          </td>
+          <td class="px-4 py-3 align-top font-mono">${e.cd_matricula ?? "—"}</td>
+          <td class="px-4 py-3 align-top font-semibold">${e.nm_pessoa ?? "—"}</td>
+          <td class="px-4 py-3 align-top">${e.nm_regional ?? "—"}</td>
+          <td class="px-4 py-3 align-top">${formatDateBR(e.dt_admissao)}</td>
+          <td class="px-4 py-3 align-top">${formatDateBR(e.dt_desligamento)}</td>
+        `;
+        tableBody.appendChild(tr);
+      }
+
+      document.querySelectorAll(".cpf-toggle").forEach(btn=>{
+        btn.addEventListener("click", ()=>{
+          const cpf = btn.getAttribute("data-cpf");
+          if(!cpf) return;
+          if(state.cpfVisible.has(cpf)) state.cpfVisible.delete(cpf);
+          else state.cpfVisible.add(cpf);
+          renderConsulta();
+        });
+      });
+    }
+
+    function showSkeleton(on){
+      skeletonBody.classList.toggle("hidden", !on);
+      tableBody.classList.toggle("hidden", on);
+    }
+
+    function renderConsulta(){
+      setSortIcons();
+      showSkeleton(true);
+      setTimeout(()=>{
+        const filtered = getFiltered();
+        const { page, pages, slice, total } = getPagination(filtered);
+
+        state.page = page;
+        countLabel.textContent = String(total);
+        pageNow.textContent = String(page);
+        pageTotal.textContent = String(pages);
+
+        prevBtn.disabled = page <= 1;
+        nextBtn.disabled = page >= pages;
+
+        emptyState.classList.toggle("hidden", total !== 0);
+
+        renderTable(slice);
+        showSkeleton(false);
+      }, 220);
+    }
+
+    // =========================
+    // Cadastro
+    // =========================
+    const formCadastrar = document.getElementById("formCadastrar");
+    const btnLimpar = document.getElementById("btnLimpar");
+    const btnIrConsultar = document.getElementById("btnIrConsultar");
+
+    const cd_cpf = document.getElementById("cd_cpf");
+    const cd_matricula = document.getElementById("cd_matricula");
+    const nm_pessoa = document.getElementById("nm_pessoa");
+    const nm_regional = document.getElementById("nm_regional");
+    const dt_admissao = document.getElementById("dt_admissao");
+    const dt_desligamento = document.getElementById("dt_desligamento");
+
+    function clearForm(){
+      cd_cpf.value = "";
+      cd_matricula.value = "";
+      nm_pessoa.value = "";
+      nm_regional.value = "";
+      dt_admissao.value = "";
+      dt_desligamento.value = "";
+    }
+
+    function onlyDigits(s){ return (s ?? "").toString().replace(/\D/g,""); }
+
+    formCadastrar.addEventListener("submit", (e)=>{
+      e.preventDefault();
+
+      const cpf = onlyDigits(cd_cpf.value);
+      const mat = (cd_matricula.value ?? "").toString().trim();
+      const nome = (nm_pessoa.value ?? "").toString().trim();
+      const reg = (nm_regional.value ?? "").toString().trim();
+      const adm = dt_admissao.value;
+      const des = dt_desligamento.value;
+
+      if(!cpf || cpf.length < 8){ toast("CPF inválido. Informe somente números.", "error"); return; }
+      if(!mat || !nome || !reg || !adm){ toast("Preencha CPF, Matrícula, Nome, Regional e Data de Admissão.", "warn"); return; }
+
+      empregados.push({
+        cd_cpf: cpf,
+        cd_matricula: mat,
+        nm_pessoa: nome.toUpperCase(),
+        nm_regional: reg,
+        dt_admissao: adm,
+        dt_desligamento: des || ""
+      });
+
+      saveData();
+      renderRegionalOptions();
+      toast("Registro cadastrado com sucesso.", "success");
+      clearForm();
+    });
+
+    btnLimpar.addEventListener("click", ()=>{ clearForm(); toast("Campos limpos.", "info"); });
+
+    btnIrConsultar.addEventListener("click", ()=>{
+      setActiveNav("consultar");
+      renderConsulta();
+      toast("Consulta carregada.", "info");
+    });
+
+    // =========================
+    // Import CSV + Auditoria
+    // =========================
+    const csvInputTop = document.getElementById("csvInputTop");
+
+    function normalizeHeader(h){
+      return (h ?? "").toString().trim().toLowerCase().replace(/\s+/g,"_");
+    }
+    function validateHeaders(headers){
+      const req = ["cd_cpf","cd_matricula","nm_pessoa","nm_regional","dt_admissao","dt_desligamento"];
+      const set = new Set(headers);
+      return req.every(r => set.has(r));
+    }
+    function toISODate(value){
+      if(!value) return "";
+      const v = value.toString().trim();
+      if(/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+      const m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if(m) return `${m[3]}-${pad2(m[2])}-${pad2(m[1])}`;
+      const d = new Date(v);
+      if(!Number.isNaN(d.getTime())) return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+      return "";
+    }
+    function parseCsv(text){
+      const rows = [];
+      let row = [], cur = "", inQuotes = false;
+      for(let i=0;i<text.length;i++){
+        const ch = text[i], next = text[i+1];
+        if(ch === '"' && inQuotes && next === '"'){ cur += '"'; i++; continue; }
+        if(ch === '"'){ inQuotes = !inQuotes; continue; }
+        if(ch === "," && !inQuotes){ row.push(cur); cur=""; continue; }
+        if((ch === "\n" || ch === "\r") && !inQuotes){
+          if(ch === "\r" && next === "\n") i++;
+          row.push(cur); cur="";
+          if(row.length > 1 || row[0] !== "") rows.push(row);
+          row = [];
+          continue;
+        }
+        cur += ch;
+      }
+      row.push(cur);
+      if(row.length > 1 || row[0] !== "") rows.push(row);
+      return rows;
+    }
+
+    function importCsvFile(file){
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        const text = reader.result?.toString() ?? "";
+        const rows = parseCsv(text);
+
+        if(rows.length < 2){ toast("CSV vazio ou inválido.", "error"); return; }
+
+        const headers = rows[0].map(normalizeHeader);
+        if(!validateHeaders(headers)){ toast("Cabeçalhos inválidos. Verifique o CSV.", "error"); return; }
+
+        const idx = Object.fromEntries(headers.map((h,i)=>[h,i]));
+        const imported = [];
+
+        for(let i=1;i<rows.length;i++){
+          const r = rows[i];
+          if(!r || r.every(c => !String(c ?? "").trim())) continue;
+
+          imported.push({
+            cd_cpf: onlyDigits(r[idx.cd_cpf]),
+            cd_matricula: (r[idx.cd_matricula] ?? "").toString().trim(),
+            nm_pessoa: (r[idx.nm_pessoa] ?? "").toString().trim().toUpperCase(),
+            nm_regional: (r[idx.nm_regional] ?? "").toString().trim(),
+            dt_admissao: toISODate(r[idx.dt_admissao]),
+            dt_desligamento: toISODate(r[idx.dt_desligamento]),
+          });
+        }
+
+        empregados = imported;
+        saveData();
+        renderRegionalOptions();
+
+        const user = getUser();
+        setAudit({ lastImport: nowBR(), user: user === "—" ? "" : user });
+
+        toast(`Importação concluída: ${empregados.length} registros.`, "success");
+        setActiveNav("consultar");
+        renderConsulta();
+      };
+      reader.readAsText(file, "utf-8");
+    }
+
+    csvInputTop.addEventListener("change", (e)=>{
+      const file = e.target.files && e.target.files[0];
+      if(!file) return;
+      importCsvFile(file);
+      e.target.value = "";
+    });
+
+    // =========================
+    // Consulta events
+    // =========================
+    searchInput.addEventListener("input", (e)=>{ state.query = e.target.value; state.page = 1; renderConsulta(); });
+    regionalSelect.addEventListener("change", (e)=>{ state.regional = e.target.value; state.page = 1; renderConsulta(); });
+    admissionFrom.addEventListener("change", (e)=>{ state.from = e.target.value; state.page = 1; renderConsulta(); });
+    admissionTo.addEventListener("change", (e)=>{ state.to = e.target.value; state.page = 1; renderConsulta(); });
+
+    clearBtn.addEventListener("click", ()=>{
+      state.query=""; state.regional=""; state.from=""; state.to=""; state.page=1;
+      searchInput.value=""; regionalSelect.value=""; admissionFrom.value=""; admissionTo.value="";
+      renderConsulta();
+      toast("Filtros limpos.", "info");
+    });
+
+    prevBtn.addEventListener("click", ()=>{ state.page = Math.max(1, state.page-1); renderConsulta(); });
+    nextBtn.addEventListener("click", ()=>{ state.page = state.page+1; renderConsulta(); });
+
+    document.querySelectorAll("th[data-sort]").forEach(th=>{
+      th.addEventListener("click", ()=>{
+        const key = th.getAttribute("data-sort");
+        if(state.sortKey === key) state.sortDir = state.sortDir === "asc" ? "desc" : "asc";
+        else { state.sortKey = key; state.sortDir = "asc"; }
+        renderConsulta();
+      });
+    });
+
+    // =========================
+    // INIT
+    // =========================
+    initTheme();
+
+    userInput.value = localStorage.getItem(LS_KEYS.user) || "";
+    if(userInputMobile) userInputMobile.value = userInput.value;
+
+    auditUser.textContent = getUser();
+    const a = getAudit();
+    auditImport.textContent = a.lastImport || "—";
+
+    loadData();
+    renderRegionalOptions();
+
+    setActiveNav("cadastrar");
+  </script>
+
+</body>
+</html>
