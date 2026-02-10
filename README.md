@@ -32,7 +32,7 @@ The application is a single-page interface built with HTML, Tailwind CSS (CDN), 
 ## Project Structure
 
 ```text
-User
+  User
    |
    v
 Cloudflare Pages (Frontend)
