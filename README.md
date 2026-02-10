@@ -1,6 +1,7 @@
 # Employee Control 2026
+## Employee Control 2026 is a lightweight internal portal for employee registration and consultation.
+
 <img width="1536" height="1024" alt="Employee-Control_2026" src="https://github.com/user-attachments/assets/087b29fe-6d31-472c-9372-c4d6679ee80c" />
-Employee Control 2026 is a lightweight internal portal for employee registration and consultation.
 
 ## Hosting
 
