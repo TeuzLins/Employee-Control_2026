@@ -58,11 +58,3 @@ python3 -m http.server 8080
 ```
 
 Then open `http://localhost:8080`.
-
-## Cloudflare Deployment Notes
-
-For Cloudflare Pages:
-
-- Set the build command to: `none` (or leave empty)
-- Set the output directory to: `.`
-- Ensure `index.html` is in the project root
