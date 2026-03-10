@@ -45,13 +45,3 @@ Cloudflare Workers (API)
    v
 Cloudflare D1 (Database)
 ```
-
-## Running Locally
-
-Or serve it with a local static server (recommended), for example:
-
-```bash
-python3 -m http.server 8080
-```
-
-Then open `http://localhost:8080`.
