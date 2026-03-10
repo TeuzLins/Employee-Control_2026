@@ -48,11 +48,6 @@ Cloudflare D1 (Database)
 
 ## Running Locally
 
-Because this is a static app, you can run it directly in a browser:
-
-1. Clone this repository.
-2. Open `index.html` in your browser.
-
 Or serve it with a local static server (recommended), for example:
 
 ```bash
