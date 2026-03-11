@@ -46,5 +46,9 @@ Cloudflare Workers (API)
    v
 Cloudflare D1 (Database)
 ```
-## Feature
-Adiciona autenticação local no Employee Control
+## Features
+- Employee registration and consultation
+- CSV data import
+- Audit tracking for imports
+- Light and dark theme support
+- Local authentication with login, registration, and session management
