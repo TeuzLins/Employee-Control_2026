@@ -46,3 +46,4 @@ Cloudflare Workers (API)
    v
 Cloudflare D1 (Database)
 ```
+"`n## Feature`nAdiciona autenticação local no Employee Control"
